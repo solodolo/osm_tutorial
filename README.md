@@ -30,7 +30,6 @@ podman run -it --rm -v $(pwd):/data_dir:Z --network postgis-network iboates/osm2
     --create --slim --cache 200 --number-processes 1 --hstore -O flex -S /data_dir/flex_style/style.style.lua \
     --multi-geometry -d postgres -U postgres -W -H postgis-server /data_dir/tanzania-260123.osm.pbf
 ```
-
 1. osm2pgsql should start the import and complete in a few minutes.
 
 ```
