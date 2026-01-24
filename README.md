@@ -23,7 +23,6 @@ This is a tutorial for building a map of Tanzania using OSM data. [This tutorial
     * More advanced themes can be built using the [Themepark](https://osm2pgsql.org/themepark/users-manual.html) framework.
 
 1. Then we can import the data by running osm2pgsql using podman. The `:Z` suffix is needed to fix SELinux security issues with the bind mount. See [this article](https://stackoverflow.com/questions/24288616/permission-denied-on-accessing-host-directory-in-docker).
-
 ```
 cd ~/workspace/osm_tutorial
 podman run -it --rm -v $(pwd):/data_dir:Z --network postgis-network iboates/osm2pgsql \
@@ -31,7 +30,6 @@ podman run -it --rm -v $(pwd):/data_dir:Z --network postgis-network iboates/osm2
     --multi-geometry -d postgres -U postgres -W -H postgis-server /data_dir/tanzania-260123.osm.pbf
 ```
 1. osm2pgsql should start the import and complete in a few minutes.
-
 ```
 2026-01-24 18:18:53  osm2pgsql version 2.2.0 (2.2.0-2-g7629962d)
 2026-01-24 18:18:53  WARNING: Ignoring option -k,--hstore for 'flex' output
