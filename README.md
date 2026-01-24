@@ -23,32 +23,32 @@ This is a tutorial for building a map of Tanzania using OSM data. [This tutorial
     * More advanced themes can be built using the [Themepark](https://osm2pgsql.org/themepark/users-manual.html) framework.
 
 1. Then we can import the data by running osm2pgsql using podman. The `:Z` suffix is needed to fix SELinux security issues with the bind mount. See [this article](https://stackoverflow.com/questions/24288616/permission-denied-on-accessing-host-directory-in-docker).
-```
-cd ~/workspace/osm_tutorial
-podman run -it --rm -v $(pwd):/data_dir:Z --network postgis-network iboates/osm2pgsql \
-    --create --slim --cache 200 --number-processes 1 --hstore -O flex -S /data_dir/flex_style/style.style.lua \
-    --multi-geometry -d postgres -U postgres -W -H postgis-server /data_dir/tanzania-260123.osm.pbf
-```
+    ```
+    cd ~/workspace/osm_tutorial
+    podman run -it --rm -v $(pwd):/data_dir:Z --network postgis-network iboates/osm2pgsql \
+        --create --slim --cache 200 --number-processes 1 --hstore -O flex -S /data_dir/flex_style/style.style.lua \
+        --multi-geometry -d postgres -U postgres -W -H postgis-server /data_dir/tanzania-260123.osm.pbf
+    ```
 1. osm2pgsql should start the import and complete in a few minutes.
-```
-2026-01-24 18:18:53  osm2pgsql version 2.2.0 (2.2.0-2-g7629962d)
-2026-01-24 18:18:53  WARNING: Ignoring option -k,--hstore for 'flex' output
-2026-01-24 18:18:53  WARNING: Ignoring option -G,--multi-geometry for 'flex' output
-2026-01-24 18:18:53  Database version: 17.5 (Debian 17.5-1.pgdg110+1)
-2026-01-24 18:18:53  PostGIS version: 3.5
-2026-01-24 18:18:53  WARNING: No output tables defined!
-2026-01-24 18:18:53  Initializing properties table '"public"."osm2pgsql_properties"'.
-2026-01-24 18:18:53  Storing properties to table '"public"."osm2pgsql_properties"'.
-2026-01-24 18:21:38  Reading input files done in 165s (2m 45s).                           
-2026-01-24 18:21:38    Processed 124849873 nodes in 133s (2m 13s) - 939k/s
-2026-01-24 18:21:38    Processed 17494539 ways in 32s - 547k/s
-2026-01-24 18:21:38    Processed 36842 relations in 0s - 37k/s
-2026-01-24 18:21:38  No marked nodes or ways (Skipping stage 2).
-2026-01-24 18:21:38  Building index on middle ways table
-2026-01-24 18:21:38  Building indexes on middle rels table
-2026-01-24 18:21:38  Done postprocessing on table 'planet_osm_nodes' in 0s
-2026-01-24 18:22:46  Done postprocessing on table 'planet_osm_ways' in 67s (1m 7s)
-2026-01-24 18:22:46  Done postprocessing on table 'planet_osm_rels' in 0s
-2026-01-24 18:22:46  Storing properties to table '"public"."osm2pgsql_properties"'.
-2026-01-24 18:22:46  osm2pgsql took 233s (3m 53s) overall.
-```
+    ```
+    2026-01-24 18:18:53  osm2pgsql version 2.2.0 (2.2.0-2-g7629962d)
+    2026-01-24 18:18:53  WARNING: Ignoring option -k,--hstore for 'flex' output
+    2026-01-24 18:18:53  WARNING: Ignoring option -G,--multi-geometry for 'flex' output
+    2026-01-24 18:18:53  Database version: 17.5 (Debian 17.5-1.pgdg110+1)
+    2026-01-24 18:18:53  PostGIS version: 3.5
+    2026-01-24 18:18:53  WARNING: No output tables defined!
+    2026-01-24 18:18:53  Initializing properties table '"public"."osm2pgsql_properties"'.
+    2026-01-24 18:18:53  Storing properties to table '"public"."osm2pgsql_properties"'.
+    2026-01-24 18:21:38  Reading input files done in 165s (2m 45s).                           
+    2026-01-24 18:21:38    Processed 124849873 nodes in 133s (2m 13s) - 939k/s
+    2026-01-24 18:21:38    Processed 17494539 ways in 32s - 547k/s
+    2026-01-24 18:21:38    Processed 36842 relations in 0s - 37k/s
+    2026-01-24 18:21:38  No marked nodes or ways (Skipping stage 2).
+    2026-01-24 18:21:38  Building index on middle ways table
+    2026-01-24 18:21:38  Building indexes on middle rels table
+    2026-01-24 18:21:38  Done postprocessing on table 'planet_osm_nodes' in 0s
+    2026-01-24 18:22:46  Done postprocessing on table 'planet_osm_ways' in 67s (1m 7s)
+    2026-01-24 18:22:46  Done postprocessing on table 'planet_osm_rels' in 0s
+    2026-01-24 18:22:46  Storing properties to table '"public"."osm2pgsql_properties"'.
+    2026-01-24 18:22:46  osm2pgsql took 233s (3m 53s) overall.
+    ```
