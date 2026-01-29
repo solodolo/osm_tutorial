@@ -14,7 +14,11 @@ _parts:
     srs: *srs
   osm2pgsql: &osm2pgsql
     type: "postgis"
-    dbname: "gis"
+    dbname: "postgis"
+    host: "10.162.3.184"
+    user: "postgres"
+    port: 5432
+    password: "password"
     key_field: ""
     geometry_field: "way"
     srid: *srid
