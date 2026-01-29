@@ -14,8 +14,9 @@ This is a tutorial for building a map of Tanzania using OSM data. Several other 
 1. Set up Postgres with PostGIS extension using Podman.
     ```
     podman network create postgis-network
-    podman run --name postgis-server --network postgis-network -e POSTGRES_PASSWORD=password -d postgis/postgis
+    podman run --name postgis-server --network host --network postgis-network -e POSTGRES_PASSWORD=password -d postgis/postgis
     podman run -it --rm --network postgis-network postgis/postgis psql -h postgis-server -U postgres
+    CREATE EXTENSION hstore;
     ```
 
 ### Importing data with osm2pgsql
@@ -62,6 +63,13 @@ This is a tutorial for building a map of Tanzania using OSM data. Several other 
     2026-01-24 18:22:46  Storing properties to table '"public"."osm2pgsql_properties"'.
     2026-01-24 18:22:46  osm2pgsql took 233s (3m 53s) overall.
     ```
+### Installing pg_tileserv
+Next we need a way to serve Mapbox Vector Tiles ([MVT](https://gdal.org/en/stable/drivers/vector/mvt.html)) from our PostGIS database to our map renderer. We can do this with [pg_tileserv](https://access.crunchydata.com/documentation/pg_tileserv/1.0.11/) which is a single standalone binary that acts as the intermediary between our raw OSM data and the rendering layer.
+1. Stand up the podman container and have it connect to the PostGIS server.
+```
+podman run -e DATABASE_URL=postgres://postgres:<password>@127.0.0.1/postgis -p 7800:7800 --network host pramsey/pg_tileserv
+```
+2. Visit [localhost:7800] to verify that things work.
 
 ### Rendering the map
 
