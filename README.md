@@ -50,7 +50,7 @@ This is a tutorial for building a map of Tanzania using OSM data. Several other 
     2026-01-24 18:18:53  WARNING: No output tables defined!
     2026-01-24 18:18:53  Initializing properties table '"public"."osm2pgsql_properties"'.
     2026-01-24 18:18:53  Storing properties to table '"public"."osm2pgsql_properties"'.
-    2026-01-24 18:21:38  Reading input files done in 165s (2m 45s).                           
+    2026-01-24 18:21:38  Reading input files done in 165s (2m 45s).
     2026-01-24 18:21:38    Processed 124849873 nodes in 133s (2m 13s) - 939k/s
     2026-01-24 18:21:38    Processed 17494539 ways in 32s - 547k/s
     2026-01-24 18:21:38    Processed 36842 relations in 0s - 37k/s
@@ -71,6 +71,30 @@ podman run -e DATABASE_URL=postgres://postgres:<password>@127.0.0.1/postgis -p 7
 ```
 2. Visit [localhost:7800] to verify that things work.
 
+### Example queries
+#### Distance to
+[ST_Distance](http://postgis.net/docs/ST_Distance.html) - Returns the 2-dimensional cartesian minimum distance (based on spatial ref) between two geometries in projected units.
+```
+SELECT
+    ST_DISTANCE(
+        ST_TRANSFORM(
+            'SRID=4326;POINT(34.63026599999999 -9.907023199906947)'::geometry, 3857
+        ),
+        way::geometry
+    ) AS geom_dist,
+    ST_DISTANCE(
+        'SRID=4326;POINT(34.63026599999999 -9.907023199906947)'::geography,
+        ST_TRANSFORM(way, 4326)::geography
+    ) AS geog_dist
+FROM planet_osm_point
+WHERE
+    ST_DISTANCE(
+        ST_TRANSFORM(
+            'SRID=4326;POINT(34.63026599999999 -9.907023199906947)'::geometry, 3857
+        ),
+        way::geometry
+    ) <= 1000;
+```
 ### Rendering the map
 
 
