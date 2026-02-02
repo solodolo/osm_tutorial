@@ -85,7 +85,7 @@ SELECT
     ST_DISTANCE(
         'SRID=4326;POINT(34.63026599999999 -9.907023199906947)'::geography,
         ST_TRANSFORM(way, 4326)::geography
-    ) AS geog_dist
+    ) AS geog_dist -- More accurate but slower
 FROM planet_osm_point
 WHERE
     ST_DISTANCE(
@@ -93,7 +93,7 @@ WHERE
             'SRID=4326;POINT(34.63026599999999 -9.907023199906947)'::geometry, 3857
         ),
         way::geometry
-    ) <= 1000;
+    ) <= 5000;
 ```
 ### Rendering the map
 
