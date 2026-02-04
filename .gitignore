@@ -2,3 +2,5 @@
 *.osm.pbf
 
 node_modules/
+enwiki/*.csv
+enwiki/*.sql
