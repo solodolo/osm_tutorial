@@ -1,7 +1,6 @@
 #! /usr/bin/env bash
 
 TABLE=""
-ACTION=""
 
 while [[ $# -gt 0 ]]; do
 	case $1 in
@@ -14,11 +13,9 @@ while [[ $# -gt 0 ]]; do
 		shift
 		;;
 		--dump)
-		ACTION="dump"
 		shift
 		;;
 		--load)
-		ACTION="load"
 		shift
 		;;
 		-*)
@@ -28,7 +25,7 @@ while [[ $# -gt 0 ]]; do
 	esac
 done
 
-if [ "$TABLE" == "page" ] && [ "$ACTION" == "dump" ]; then
+if [ "$TABLE" == "page" ]; then
 	# Dump the data we need from `page` and `geo_tag` tables
 	# -B flag prints the results using tab as the column separator
 	PAGE_SELECT="SELECT page_id, page_namespace, HEX(page_title) AS page_title FROM page WHERE page_is_redirect = 0;"
@@ -48,7 +45,7 @@ if [ "$TABLE" == "page" ] && [ "$ACTION" == "dump" ]; then
 	echo $PAGE_SELECT | mariadb -B -h localhost --port 3306 -u user --password enwiki > $PAGE_DUMP_PATH
 fi
 
-if [ "$TABLE" == "geo_tags" ] && [ "$ACTION" == "dump" ]; then
+if [ "$TABLE" == "geo_tags" ]; then
 	GEO_TAG_SELECT="SELECT gt_id, gt_page_id, HEX(gt_globe) AS gt_globe, \
 	gt_lat, gt_lon, gt_dim, HEX(gt_type) AS gt_type, HEX(gt_name) AS gt_name, \
 	HEX(gt_country) AS gt_country, HEX(gt_region) AS gt_region, gt_lat_int, gt_lon_int FROM \
