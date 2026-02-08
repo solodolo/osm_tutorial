@@ -51,7 +51,7 @@ fi
 if [ "$TABLE" == "geo_tags" ] && [ "$ACTION" == "dump" ]; then
 	GEO_TAG_SELECT="SELECT gt_id, gt_page_id, HEX(gt_globe) AS gt_globe, \
 	gt_lat, gt_lon, gt_dim, HEX(gt_type) AS gt_type, HEX(gt_name) AS gt_name, \
-	gt_country, HEX(gt_region) AS gt_region, gt_lat_int, gt_lon_int FROM \
+	HEX(gt_country) AS gt_country, HEX(gt_region) AS gt_region, gt_lat_int, gt_lon_int FROM \
 	geo_tags WHERE gt_primary = 1;"
 
 	GEO_TAG_DUMP_PATH="geo_tag_dump.csv"
