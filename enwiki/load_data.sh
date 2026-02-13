@@ -29,13 +29,11 @@ fi
 
 STAGING_DST="${DST}_staging"
 
-echo "loading data from $SRC into $STAGING_DST"
+echo "loading data from $SRC into $STAGING_DST and then copying into $DST"
 
-cat $SRC | psql -h localhost -U postgres -W postgis -c "TRUNCATE TABLE $STAGING_DST; COPY $STAGING_DST FROM STDIN WITH (format text, delimiter E'\t', HEADER, NULL 'NULL');"
-
-echo "copying data from $STAGING_DST into $DST"
-
+STAGING_COPY="TRUNCATE TABLE $STAGING_DST; COPY $STAGING_DST FROM STDIN WITH (format text, delimiter E'\t', HEADER, NULL 'NULL');"
 INSERT="
+TRUNCATE TABLE enwiki_page_geo;
 INSERT INTO enwiki_page_geo (
     page_id,
     page_namespace,
@@ -52,7 +50,7 @@ INSERT INTO enwiki_page_geo (
     gt_region,
     gt_lat_int,
     gt_lon_int,
-    page_len_pentile
+    page_len_ntile
 ) SELECT
     page_id,
     page_namespace,
@@ -69,8 +67,8 @@ INSERT INTO enwiki_page_geo (
     DECODE(gt_region, 'hex') AS gt_region,
     gt_lat_int,
     gt_lon_int,
-    page_len_pentile
-FROM enwiki_page_geo_staging
-"
+    page_len_ntile
+FROM enwiki_page_geo_staging;"
 
-psql -b -h localhost -U postgres -W postgis -c "set log_statement='all'; ${INSERT}"
+cat $SRC | psql -h localhost -U postgres -W postgis -c "${STAGING_COPY}${INSERT}"
+

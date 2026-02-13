@@ -20,7 +20,7 @@ WITH page_geo AS (
     JOIN page p ON p.page_id = gt.gt_page_id
     WHERE p.page_is_redirect = 0 AND gt.gt_primary = 1 AND gt_globe = 'earth'
 )
-SELECT *, NTILE(5) over (order by page_geo.page_len) AS page_len_pentile FROM page_geo
+SELECT *, NTILE(66) over (order by page_geo.page_len) AS page_len_ntile FROM page_geo
 "
 
 DUMP_PATH="page_geo.csv"
