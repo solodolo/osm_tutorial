@@ -17,6 +17,7 @@
   "devDependencies": {
     "eslint": "^10.0.0",
     "eslint-config-openlayers": "^20.0.0",
+    "typescript": "^5.9.3",
     "vite": "^7.3.1"
   }
 }
