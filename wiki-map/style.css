@@ -12,3 +12,40 @@ body {
   bottom: 0;
   width: 100%;
 }
+
+.wiki-tooltip {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+  max-width: 280px;
+  padding: 10px 12px;
+  pointer-events: auto;
+  transform: translateY(-2px);
+}
+
+.wiki-tooltip__title {
+  font-family: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.wiki-tooltip__title a {
+  color: #163a66;
+  text-decoration: none;
+}
+
+.wiki-tooltip__title a:hover {
+  text-decoration: underline;
+}
+
+.wiki-tooltip__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: #f4f6fb;
+}
