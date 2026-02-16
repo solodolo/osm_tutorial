@@ -65,6 +65,7 @@ map.addLayer(layer2);
 
 type WikiPreview = {
   title: string;
+  description: string;
   thumbnailUrl?: string;
 };
 
@@ -90,6 +91,7 @@ function renderTooltip(preview: WikiPreview, pageId: number) {
     : '';
   tooltipEl.innerHTML = `
     <div class="wiki-tooltip__title"><a href="${link}" target="_blank" rel="noreferrer">${preview.title}</a></div>
+    <div class="wiki-tooltip__description">${preview.description}</div>
     ${img}
   `.trim();
 }
@@ -120,7 +122,7 @@ async function fetchWikiPreview(pageId: number): Promise<WikiPreview | null> {
       origin: '*',
       pageids: String(pageId),
       redirects: '1',
-      prop: 'pageimages',
+      prop: 'description|pageimages',
       piprop: 'thumbnail',
       pithumbsize: '240',
     }).toString();
@@ -134,8 +136,10 @@ async function fetchWikiPreview(pageId: number): Promise<WikiPreview | null> {
     const title: string | undefined = page.title;
     if (!title) return null;
 
+    const description: string = page.description || "";
+
     const thumbnailUrl: string | undefined = page.thumbnail?.source;
-    return { title, thumbnailUrl };
+    return { title, description, thumbnailUrl };
   })().catch((err) => {
     wikiPreviewCache.delete(pageId);
     throw err;

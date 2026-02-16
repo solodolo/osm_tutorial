@@ -21,7 +21,7 @@ body {
   max-width: 280px;
   padding: 10px 12px;
   pointer-events: auto;
-  transform: translateY(-2px);
+  transform: translateY(-3px);
 }
 
 .wiki-tooltip__title {
@@ -38,6 +38,16 @@ body {
 
 .wiki-tooltip__title a:hover {
   text-decoration: underline;
+}
+
+.wiki-tooltip__description {
+  background: white;
+  font-size: 12px;
+  font-weight: 400;
+  margin: 1em 0 1em 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
 }
 
 .wiki-tooltip__img {
