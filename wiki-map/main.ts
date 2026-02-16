@@ -7,12 +7,11 @@ import View from 'ol/View.js';
 import TileLayer from 'ol/layer/Tile.js';
 import VectorTileLayer from 'ol/layer/VectorTile.js';
 import VectorTileSource from 'ol/source/VectorTile.js';
-import Select from 'ol/interaction/Select.js';
 import { Fill, Stroke, Style } from 'ol/style';
 import CircleStyle from 'ol/style/Circle';
-import { StyleLike } from 'ol/style/Style';
-import { click } from 'ol/events/condition';
 import { FeatureLike } from 'ol/Feature';
+import { MapBrowserEvent } from 'ol';
+import { Coordinate } from 'ol/coordinate';
 
 const map: OLMap = new OLMap({
   view: new View({
@@ -42,7 +41,7 @@ const selectedStyle = new Style({
   }),
 });
 
-let selectedFeature = null;
+let selectedFeature: number | null = null;
 const layer2 = new VectorTileLayer({
   source: new VectorTileSource({
     format: new MVT(),
@@ -82,7 +81,6 @@ const tooltipOverlay: Overlay = new Overlay({
 map.addOverlay(tooltipOverlay);
 
 const wikiPreviewCache: Map<number, Promise<WikiPreview | null>> = new Map();
-let tooltipRequestId = 0;
 
 function renderTooltip(preview: WikiPreview, pageId: number) {
   const link = `https://en.wikipedia.org/w/index.php?curid=${pageId}`;
@@ -97,7 +95,6 @@ function renderTooltip(preview: WikiPreview, pageId: number) {
 }
 
 function closeTooltip() {
-  tooltipRequestId++;
   tooltipOverlay.setPosition(undefined);
   tooltipEl.style.display = 'none';
   tooltipEl.innerHTML = '';
@@ -154,12 +151,64 @@ function resetSelectedFeatures() {
   layer2.changed();
 }
 
-function setSelectedFeature(feature: FeatureLike) {
-  selectedFeature = feature.get('page_id');
+function setSelectedFeature(pageId: number) {
+  selectedFeature = pageId;
   layer2.changed();
 }
 
-function mapClickListener(event) {
+function parseRawPageId(rawPageId: string): number | null {
+  const parsed = Number(rawPageId);
+
+  if (!Number.isFinite(parsed) || parsed <= 0) return null;
+
+  return parsed;
+}
+
+function onFeatureClicked(feature: FeatureLike | null | undefined, coordinate: Coordinate) {
+  if (!feature) {
+    resetSelectedFeatures();
+    closeTooltip();
+    return;
+  }
+
+  const pageId = parseRawPageId(feature.get('page_id'));
+
+  if (!pageId) {
+    resetSelectedFeatures();
+    closeTooltip();
+    return;
+  }
+
+  setSelectedFeature(pageId);
+
+  openTooltipAt(
+    coordinate,
+    `<div class="wiki-tooltip__title">Loading...</div>`,
+  );
+
+  fetchWikiPreview(pageId)
+    .then((preview) => {
+      if (pageId !== selectedFeature) return;
+      if (!preview) {
+        openTooltipAt(
+          coordinate,
+          `<div class="wiki-tooltip__title">Wikipedia article not found</div>`,
+        );
+        return;
+      }
+      renderTooltip(preview, pageId);
+      tooltipOverlay.setPosition(coordinate);
+    })
+    .catch(() => {
+      if (pageId !== selectedFeature) return;
+      openTooltipAt(
+        coordinate,
+        `<div class="wiki-tooltip__title">Failed to load preview</div>`,
+      );
+    });
+}
+
+function mapClickListener(event: MapBrowserEvent) {
   const hit = map.forEachFeatureAtPixel(
     event.pixel,
     (feature) => feature,
@@ -171,47 +220,7 @@ function mapClickListener(event) {
     },
   );
 
-  if (!hit) {
-    resetSelectedFeatures();
-    closeTooltip();
-    return;
-  }
-
-  setSelectedFeature(hit);
-
-  const pageIdRaw = (hit as any).get?.('page_id');
-  const pageId = Number(pageIdRaw);
-  if (!Number.isFinite(pageId) || pageId <= 0) {
-    closeTooltip();
-    return;
-  }
-
-  const requestId = ++tooltipRequestId;
-  openTooltipAt(
-    event.coordinate,
-    `<div class="wiki-tooltip__title">Loading...</div>`,
-  );
-
-  fetchWikiPreview(pageId)
-    .then((preview) => {
-      if (requestId !== tooltipRequestId) return;
-      if (!preview) {
-        openTooltipAt(
-          event.coordinate,
-          `<div class="wiki-tooltip__title">Wikipedia article not found</div>`,
-        );
-        return;
-      }
-      renderTooltip(preview, pageId);
-      tooltipOverlay.setPosition(event.coordinate);
-    })
-    .catch(() => {
-      if (requestId !== tooltipRequestId) return;
-      openTooltipAt(
-        event.coordinate,
-        `<div class="wiki-tooltip__title">Failed to load preview</div>`,
-      );
-    });
+  onFeatureClicked(hit, event.coordinate);
 }
 
 map.on('click', mapClickListener);
