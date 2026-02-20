@@ -96,5 +96,14 @@ WHERE
     ) <= 5000;
 ```
 ### Rendering the map
+We need a way to render the MVT tiles from `pg_fileserv`. We can use [OpenLayers](https://openlayers.org/doc/quickstart.html), which is a client-side library for rendering map tiles.
+1. Install OpenLayers `npm create ol-app wiki-map`
+2. Install vite
+```
+cd wiki-map && npm install vite --save
+```
+3. Start the server with `npx vite`
 
+#### Issues during setup
+1. It wasn't clear to me how to change the style of a feature when it is clicked. I tried using [Select Interactions](https://openlayers.org/en/latest/apidoc/module-ol_interaction_Select-Select.html) but these do not seem to be supported for vector tile layers. Eventually, I came across [this article](https://openlayers.org/en/latest/examples/vector-tile-selection.html) which shows how to do what I wanted using `map.on` click events.
 
