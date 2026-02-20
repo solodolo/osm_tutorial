@@ -2,22 +2,18 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-async function flushMicrotasks() {
-  await Promise.resolve();
-  await Promise.resolve();
-}
-
-async function flushAsync() {
-  await flushMicrotasks();
-  await new Promise((r) => setTimeout(r, 0));
-  await flushMicrotasks();
-}
-
 function makeFeature(pageId: number) {
   return {
     get: (key: string) => (key === 'page_id' ? pageId : undefined),
   };
 }
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((res) => resolve = res);
+  return { promise, resolve };
+}
+
 
 let MapMock: any;
 let OverlayMock: any;
@@ -71,7 +67,9 @@ vi.mock('ol/Map.js', () => {
     }
 
     triggerClick(event: any) {
-      for (const h of this.handlers['click'] || []) h(event);
+      const results: any[] = [];
+      for (const h of this.handlers['click'] || []) results.push(h(event));
+      return Promise.all(results);
     }
   }
 
@@ -137,30 +135,13 @@ describe('main.ts tooltip behavior', () => {
 
   it('clicking a feature while another tooltip is loading shows the most recently clicked feature', async () => {
     const jsonByPageId = new Map<number, Promise<any>>();
-    const d1 = Promise.resolve({
-      query: {
-        pages: [
-          {
-            title: 'A',
-            description: 'First',
-            thumbnail: { source: 'https://example.com/a.jpg' },
-          },
-        ],
-      },
-    });
-    const d2 = Promise.resolve({
-      query: {
-        pages: [
-          {
-            title: 'B',
-            description: 'Second',
-            thumbnail: { source: 'https://example.com/b.jpg' },
-          },
-        ],
-      },
-    });
-    jsonByPageId.set(1, d1);
-    jsonByPageId.set(2, d2);
+    const d1 = deferred();
+    const d2 = deferred();
+    const preview1 = { query: { pages: [{ title: 'A', description: 'First', thumbnail: { source: 'https://example.com/a.jpg' } }] } };
+    const preview2 = { query: { pages: [{ title: 'B', description: 'Second', thumbnail: { source: 'https://example.com/b.jpg' } }] } };
+
+    jsonByPageId.set(1, d1.promise);
+    jsonByPageId.set(2, d2.promise);
 
     vi.stubGlobal(
       'fetch',
@@ -184,21 +165,21 @@ describe('main.ts tooltip behavior', () => {
     const map = MapMock.instances[0];
 
     map.setHit(makeFeature(1));
-    map.triggerClick({ pixel: [0, 0], coordinate: [1, 1] });
+    const click1 = map.triggerClick({ pixel: [0, 0], coordinate: [1, 1] });
     expect(tooltipEl.innerHTML).toContain('Loading...');
 
     map.setHit(makeFeature(2));
-    map.triggerClick({ pixel: [0, 0], coordinate: [2, 2] });
+    const click2 = map.triggerClick({ pixel: [0, 0], coordinate: [2, 2] });
     expect(overlay.position).toEqual([2, 2]);
 
-    await flushAsync();
+    d1.resolve(preview1);
+    d2.resolve(preview2);
+
+    await click1;
+    await click2;
 
     expect(tooltipEl.innerHTML).toContain('B');
     expect(tooltipEl.innerHTML).toContain('curid=2');
-
-    await flushAsync();
-
-    expect(tooltipEl.innerHTML).toContain('B');
     expect(tooltipEl.innerHTML).not.toContain('A');
   });
 
@@ -240,18 +221,18 @@ describe('main.ts tooltip behavior', () => {
     const map = MapMock.instances[0];
 
     map.setHit(makeFeature(1));
-    map.triggerClick({ pixel: [0, 0], coordinate: [5, 5] });
+    const click1 = map.triggerClick({ pixel: [0, 0], coordinate: [5, 5] });
     expect(tooltipEl.style.display).toBe('block');
     expect(tooltipEl.innerHTML).toContain('Loading...');
 
     map.setHit(undefined);
-    map.triggerClick({ pixel: [0, 0], coordinate: [9, 9] });
+    await map.triggerClick({ pixel: [0, 0], coordinate: [9, 9] });
 
     expect(overlay.position).toBeUndefined();
     expect(tooltipEl.style.display).toBe('none');
     expect(tooltipEl.innerHTML).toBe('');
 
-    await flushAsync();
+    await click1;
 
     expect(overlay.position).toBeUndefined();
     expect(tooltipEl.style.display).toBe('none');

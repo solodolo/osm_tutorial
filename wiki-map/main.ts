@@ -164,7 +164,7 @@ function parseRawPageId(rawPageId: string): number | null {
   return parsed;
 }
 
-function onFeatureClicked(feature: FeatureLike | null | undefined, coordinate: Coordinate) {
+async function onFeatureClicked(feature: FeatureLike | null | undefined, coordinate: Coordinate): Promise<void> {
   if (!feature) {
     resetSelectedFeatures();
     closeTooltip();
@@ -186,26 +186,25 @@ function onFeatureClicked(feature: FeatureLike | null | undefined, coordinate: C
     `<div class="wiki-tooltip__title">Loading...</div>`,
   );
 
-  fetchWikiPreview(pageId)
-    .then((preview) => {
-      if (pageId !== selectedFeature) return;
-      if (!preview) {
-        openTooltipAt(
-          coordinate,
-          `<div class="wiki-tooltip__title">Wikipedia article not found</div>`,
-        );
-        return;
-      }
-      renderTooltip(preview, pageId);
-      tooltipOverlay.setPosition(coordinate);
-    })
-    .catch(() => {
-      if (pageId !== selectedFeature) return;
+  try {
+    const preview = await fetchWikiPreview(pageId);
+    if (pageId !== selectedFeature) return;
+    if (!preview) {
       openTooltipAt(
         coordinate,
-        `<div class="wiki-tooltip__title">Failed to load preview</div>`,
+        `<div class="wiki-tooltip__title">Wikipedia article not found</div>`,
       );
-    });
+      return;
+    }
+    renderTooltip(preview, pageId);
+    tooltipOverlay.setPosition(coordinate);
+  } catch {
+    if (pageId !== selectedFeature) return;
+    openTooltipAt(
+      coordinate,
+      `<div class="wiki-tooltip__title">Failed to load preview</div>`,
+    );
+  }
 }
 
 function mapClickListener(event: MapBrowserEvent) {
@@ -220,7 +219,7 @@ function mapClickListener(event: MapBrowserEvent) {
     },
   );
 
-  onFeatureClicked(hit, event.coordinate);
+  return onFeatureClicked(hit, event.coordinate);
 }
 
 map.on('click', mapClickListener);
