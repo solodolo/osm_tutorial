@@ -1,5 +1,12 @@
 #! /usr/bin/env bash
 
+DUMP_PATH="$1"
+
+if [ "$DUMP_PATH" == "" ]; then
+    echo "usage: $0 <destination>"
+    exit 1
+fi
+
 SELECT="
 WITH page_geo AS (
     SELECT page_id,
@@ -22,8 +29,6 @@ WITH page_geo AS (
 )
 SELECT *, NTILE(66) over (order by page_geo.page_len) AS page_len_ntile FROM page_geo
 "
-
-DUMP_PATH="page_geo.csv"
 
 echo "dumping data to $DUMP_PATH"
 
