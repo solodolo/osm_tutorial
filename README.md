@@ -110,3 +110,44 @@ cd wiki-map && npm install vite --save
 #### Wikipedia API
 1. A testing sandbox for the Wikipedia API is available at https://en.wikipedia.org/wiki/Special:ApiSandbox
 
+## Production deployment
+1. Create project directory on server
+    ```
+    ssh -p 3020 dmmettlach@137.184.39.108 'mkdir -p ~/wikimap/wikimap'
+    ```
+1. Copy the project files to the server
+    ```
+    # Docker compose
+    scp -P 3020 docker-compose.yml dmmettlach@137.184.39.108:~/wikimap/
+    # pg_tileserv config
+    scp -P 3020 wikimap/pg_tileserv.toml dmmettlach@137.184.39.108:~/wikimap/wikimap/
+    # Database scripts
+    rsync -e "ssh -p 3020" --exclude data -av enwiki dmmettlach@137.184.39.108:~/wikimap/
+    ```
+1. Dump the data and copy to server
+    ```
+    cd enwiki
+    ./dump_data.sh data/page_geo.csv
+    ssh -p 3020 dmmettlach@137.184.39.108 'mkdir -p ~/wikimap/enwiki/data'
+    scp -P 3020 data/page_geo.csv dmmettlach@137.184.39.108:~/wikimap/enwiki/data/
+    ```
+1. Start the containers
+    ```
+    ssh -p 3020 dmmettlach@137.184.39.108
+    cd wikidata
+    docker-compose up -d
+    ```
+1. Set up the database
+    ```
+    docker exec -i wikimap-postgis-1 psql -U postgres postgis < create_table_enwiki_page_geo.sql
+    docker exec -i wikimap-postgis-1 psql -U postgres postgis < create_table_enwiki_page_geo_staging.sql
+    docker exec -i wikimap-postgis-1 psql -U postgres postgis < create_enwiki_page_geo_by_zoom_advanced_function.sql
+    ```
+1. Load the data
+    ```
+    # Load into staging table
+    cat page_geo.csv | docker exec -i wikimap-postgis-1 psql -h localhost -U postgres -W postgis -c "COPY enwiki_page_geo_staging FROM STDIN WITH (format text, delimiter E'\t', HEADER, NULL 'NULL');"
+    # Copy from staging to prod
+    INSERT="TRUNCATE TABLE enwiki_page_geo; INSERT INTO enwiki_page_geo ( page_id, page_namespace, page_title, page_len, gt_id, gt_lat, gt_lon, gt_geo, gt_dim, gt_type, gt_name, gt_country, gt_region, gt_lat_int, gt_lon_int, page_len_ntile ) SELECT page_id, page_namespace, DECODE(page_title, 'hex') AS page_title, page_len, gt_id, gt_lat, gt_lon, ST_SetSRID(ST_MakePoint(gt_lon, gt_lat), 4326) AS gt_geo, gt_dim, DECODE(gt_type, 'hex') AS gt_type, DECODE(gt_name, 'hex') AS gt_name, DECODE(gt_country, 'hex') AS gt_country, DECODE(gt_region, 'hex') AS gt_region, gt_lat_int, gt_lon_int, page_len_ntile FROM enwiki_page_geo_staging;"
+    docker exec -it wikimap-postgis-1 psql -h localhost -U postgres postgis -c "$INSERT"
+    ```
