@@ -42,10 +42,11 @@ const selectedStyle = new Style({
 });
 
 let selectedFeature: number | null = null;
+let tileSourceUrl = `${import.meta.env.VITE_TILE_SERVER_URL}/public.enwiki_page_geo_by_zoom_advanced/{z}/{x}/{y}.pbf`;
 const layer2 = new VectorTileLayer({
   source: new VectorTileSource({
     format: new MVT(),
-    url: "http://127.0.0.1:7800/public.enwiki_page_geo_by_zoom_advanced/{z}/{x}/{y}.pbf",
+    url: tileSourceUrl,
     maxZoom: 22,
   }),
   style: (feature) => {
