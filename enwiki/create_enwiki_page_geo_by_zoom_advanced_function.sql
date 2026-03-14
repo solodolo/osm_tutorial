@@ -33,6 +33,7 @@ BEGIN
         b.env,
         b.frac
       FROM enwiki_page_geo t, bounds b
+      WHERE ST_Intersects(t.gt_geo, ST_Transform(b.env, 4326))
     ),
     ranked AS (
       SELECT
@@ -44,8 +45,7 @@ BEGIN
     kept AS (
       SELECT *
       FROM ranked, bounds b
-      WHERE ST_Intersects(gt_geo, ST_Transform(b.env, 4326))
-      AND rn <= GREATEST(1, CEIL(n_total * LEAST(1, b.frac)))  -- at z=22, frac=1 => keep all
+      WHERE rn <= GREATEST(1, CEIL(n_total * LEAST(1, b.frac)))  -- at z=22, frac=1 => keep all
     ),
     mvtgeom AS (
       SELECT
