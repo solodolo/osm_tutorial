@@ -1,5 +1,6 @@
 *.osm
 *.osm.pbf
+.env
 
 node_modules/
 
