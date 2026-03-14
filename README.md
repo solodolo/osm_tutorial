@@ -137,6 +137,11 @@ cd wiki-map && npm install vite --save
     ssh -p 3020 dmmettlach@137.184.39.108 'mkdir -p ~/wikimap/enwiki/data'
     scp -P 3020 data/page_geo.csv dmmettlach@137.184.39.108:~/wikimap/enwiki/data/
     ```
+1. Set up `.env` file. See `.env.example` for required variables.
+    ```
+    echo "POSTGRES_PASSWORD=foobar" > ~/wikimap/.env
+    chmod 600 ~/wikimap/.env
+    ```
 1. Start the containers
     ```
     ssh -p 3020 dmmettlach@137.184.39.108
