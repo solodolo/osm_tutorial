@@ -114,6 +114,7 @@ cd wiki-map && npm install vite --save
 1. Create project directory on server
     ```
     ssh -p 3020 dmmettlach@137.184.39.108 'mkdir -p ~/wikimap/wikimap'
+    ssh -p 3020 dmmettlach@137.184.39.108 'mkdir -p ~/www_data/wikimap'
     ```
 1. Copy the project files to the server
     ```
@@ -123,6 +124,11 @@ cd wiki-map && npm install vite --save
     scp -P 3020 wikimap/pg_tileserv.toml dmmettlach@137.184.39.108:~/wikimap/wikimap/
     # Database scripts
     rsync -e "ssh -p 3020" --exclude data -av enwiki dmmettlach@137.184.39.108:~/wikimap/
+    ```
+1. Build the web app and copy to server
+    ```
+    npm run build
+    rsync -e "ssh -p 3020" -av dist dmmettlach@137.184.39.108:~/www_data/wikimap
     ```
 1. Dump the data and copy to server
     ```
