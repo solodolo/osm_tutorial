@@ -20,3 +20,4 @@ CREATE TABLE IF NOT EXISTS enwiki_page_geo (
 CREATE UNIQUE INDEX IF NOT EXISTS page_id_gt_id_enwiki_page_geo_idx ON enwiki_page_geo (page_id, gt_id);
 CREATE INDEX IF NOT EXISTS gt_geo_enwiki_page_geo_idx ON enwiki_page_geo USING GIST (gt_geo);
 CREATE INDEX IF NOT EXISTS pentile_enwiki_page_geo_idx ON enwiki_page_geo (page_len_ntile);
+CREATE INDEX IF NOT EXISTS page_len_enwiki_page_geo_idx on enwiki_page_geo (page_len);
