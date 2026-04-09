@@ -1,12 +1,12 @@
 import './style.css'
-import MVT from 'ol/format/MVT.js';
+import pmtilesUrl from './enwiki_page_geo.pmtiles'
 import OSM from 'ol/source/OSM.js'
 import OLMap from 'ol/Map.js';
 import Overlay from 'ol/Overlay.js';
 import View from 'ol/View.js';
 import TileLayer from 'ol/layer/Tile.js';
-import VectorTileLayer from 'ol/layer/VectorTile.js';
-import VectorTileSource from 'ol/source/VectorTile.js';
+import VectorTile from 'ol/layer/VectorTile';
+import { PMTilesVectorSource } from 'ol-pmtiles';
 import { Fill, Stroke, Style } from 'ol/style';
 import CircleStyle from 'ol/style/Circle';
 import { FeatureLike } from 'ol/Feature';
@@ -21,7 +21,7 @@ const map: OLMap = new OLMap({
   target: 'map',
 });
 
-const layer: TileLayer = new TileLayer({
+const baseLayer: TileLayer = new TileLayer({
   source: new OSM(),
 });
 
@@ -42,12 +42,9 @@ const selectedStyle = new Style({
 });
 
 let selectedFeature: number | null = null;
-let tileSourceUrl = `${import.meta.env.VITE_TILE_SERVER_URL}/public.enwiki_page_geo_by_zoom_advanced/{z}/{x}/{y}.pbf`;
-const layer2 = new VectorTileLayer({
-  source: new VectorTileSource({
-    format: new MVT(),
-    url: tileSourceUrl,
-    maxZoom: 22,
+const wikiDataLayer = new VectorTile({
+  source: new PMTilesVectorSource({
+    url: pmtilesUrl,
   }),
   style: (feature) => {
     let pageId = feature?.get('page_id');
@@ -60,8 +57,8 @@ const layer2 = new VectorTileLayer({
   },
 });
 
-map.addLayer(layer);
-map.addLayer(layer2);
+map.addLayer(baseLayer);
+map.addLayer(wikiDataLayer);
 
 type WikiPreview = {
   title: string;
@@ -149,12 +146,12 @@ async function fetchWikiPreview(pageId: number): Promise<WikiPreview | null> {
 
 function resetSelectedFeatures() {
   selectedFeature = null;
-  layer2.changed();
+  wikiDataLayer.changed();
 }
 
 function setSelectedFeature(pageId: number) {
   selectedFeature = pageId;
-  layer2.changed();
+  wikiDataLayer.changed();
 }
 
 function parseRawPageId(rawPageId: string): number | null {
@@ -214,7 +211,7 @@ function mapClickListener(event: MapBrowserEvent) {
     (feature) => feature,
     {
       layerFilter: (layerCandidate) => {
-        return layerCandidate === layer2;
+        return layerCandidate === wikiDataLayer;
       },
       hitTolerance: 4
     },
