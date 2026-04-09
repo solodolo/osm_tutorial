@@ -1,7 +1,8 @@
 {
   "dependencies": {
     "ol": "^10.7.0",
-    "ol-mapbox-style": "^13.2.0"
+    "ol-mapbox-style": "^13.2.0",
+    "ol-pmtiles": "^2.0.2"
   },
   "eslintConfig": {
     "extends": "openlayers",
