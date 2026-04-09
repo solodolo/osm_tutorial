@@ -1,9 +1,13 @@
 *.osm
 *.osm.pbf
+*.pmtiles
+*.jsonl
 .env
 
 node_modules/
 
 enwiki/data/
+enwiki/tippecanoe
 
 wikimap/dist/
+
