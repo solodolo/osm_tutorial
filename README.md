@@ -150,9 +150,9 @@ cd wiki-map && npm install vite --save
     ```
 1. Set up the database
     ```
-    docker exec -i wikimap-postgis-1 psql -U postgres postgis < create_table_enwiki_page_geo.sql
-    docker exec -i wikimap-postgis-1 psql -U postgres postgis < create_table_enwiki_page_geo_staging.sql
-    docker exec -i wikimap-postgis-1 psql -U postgres postgis < create_enwiki_page_geo_by_zoom_advanced_function.sql
+    docker exec -i wikimap-postgis-1 psql -U postgres postgis < sql/create_table_enwiki_page_geo.sql
+    docker exec -i wikimap-postgis-1 psql -U postgres postgis < sql/create_table_enwiki_page_geo_staging.sql
+    docker exec -i wikimap-postgis-1 psql -U postgres postgis < sql/create_enwiki_page_geo_by_zoom_advanced_function.sql
     ```
 1. Load the data
     ```
