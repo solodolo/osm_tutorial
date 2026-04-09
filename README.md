@@ -5,7 +5,10 @@ This is a tutorial for building a map of Tanzania using OSM data. Several other 
 * https://github.com/bmgru/osmhike-tileserver/blob/master/tutorial.pdf as a general reference.
 * https://github.com/openstreetmap-carto/openstreetmap-carto was used as the default style for importing and rendering data
 
-## Tutorial
+## MVT Tutorial
+
+This approach loads the geo data into PostGIS and then stands up an MVT tile server that issues `/{z}/{x}/{y}.pbf` queries to the PostGIS server and converts the responses into MVT tiles.
+The frontend uses OpenLayers to render the MVT tiles and generate requests to the tile server.
 
 ### Setting up Postgres and PostGIS
 
@@ -19,50 +22,6 @@ This is a tutorial for building a map of Tanzania using OSM data. Several other 
     CREATE EXTENSION hstore;
     ```
 
-### Importing data with osm2pgsql
-1. Create our working directory.
-    ```
-    mkdir -p ~/workspace/osm_tutorial && cd ~/workspace/osm_tutorial
-    ```
-1. Create a "style" lua file to describe how osm2pgsql should transform the source OSM data into data for Postgres. Read more about styles [here](https://osm2pgsql.org/doc/manual.html#the-flex-output). More advanced themes can be built using the [Themepark](https://osm2pgsql.org/themepark/users-manual.html) framework. For this project, we can use the style provided by [openstreetmap-carto](https://github.com/openstreetmap-carto/openstreetmap-carto).
-    ```
-    git clone git clone git@github.com:openstreetmap-carto/openstreetmap-carto.git
-    ```
-1. ~Install osm2pgsql. This will allow us to import the osm.pbf files into our postgis database.~
-    * ~Grab the default lua style from the osm2pgsql repository.~
-    ```
-    mkdir -p ~/workspace/osm_tutorial/flex_style && cd ~/workspace/osm_tutorial
-    wget -O flex_style/style.lua https://raw.githubusercontent.com/osm2pgsql-dev/osm2pgsql/refs/heads/master/style.lua
-    ```
-1. Then we can import the data by running osm2pgsql using podman. The `:Z` suffix is needed to fix SELinux security issues with the bind mount. See [this article](https://stackoverflow.com/questions/24288616/permission-denied-on-accessing-host-directory-in-docker).
-    ```
-    podman run -it --rm -v $(pwd):/data_dir:Z --network postgis-network iboates/osm2pgsql \
-        --create --slim --cache 200 --number-processes 1 --hstore -O flex -S /data_dir/openstreetmap-carto/openstreetmap-carto-flex.lua \
-        --multi-geometry -d postgres -U postgres -W -H postgis-server /data_dir/tanzania-260123.osm.pbf
-    ```
-1. osm2pgsql should start the import and complete in a few minutes.
-    ```
-    2026-01-24 18:18:53  osm2pgsql version 2.2.0 (2.2.0-2-g7629962d)
-    2026-01-24 18:18:53  WARNING: Ignoring option -k,--hstore for 'flex' output
-    2026-01-24 18:18:53  WARNING: Ignoring option -G,--multi-geometry for 'flex' output
-    2026-01-24 18:18:53  Database version: 17.5 (Debian 17.5-1.pgdg110+1)
-    2026-01-24 18:18:53  PostGIS version: 3.5
-    2026-01-24 18:18:53  WARNING: No output tables defined!
-    2026-01-24 18:18:53  Initializing properties table '"public"."osm2pgsql_properties"'.
-    2026-01-24 18:18:53  Storing properties to table '"public"."osm2pgsql_properties"'.
-    2026-01-24 18:21:38  Reading input files done in 165s (2m 45s).
-    2026-01-24 18:21:38    Processed 124849873 nodes in 133s (2m 13s) - 939k/s
-    2026-01-24 18:21:38    Processed 17494539 ways in 32s - 547k/s
-    2026-01-24 18:21:38    Processed 36842 relations in 0s - 37k/s
-    2026-01-24 18:21:38  No marked nodes or ways (Skipping stage 2).
-    2026-01-24 18:21:38  Building index on middle ways table
-    2026-01-24 18:21:38  Building indexes on middle rels table
-    2026-01-24 18:21:38  Done postprocessing on table 'planet_osm_nodes' in 0s
-    2026-01-24 18:22:46  Done postprocessing on table 'planet_osm_ways' in 67s (1m 7s)
-    2026-01-24 18:22:46  Done postprocessing on table 'planet_osm_rels' in 0s
-    2026-01-24 18:22:46  Storing properties to table '"public"."osm2pgsql_properties"'.
-    2026-01-24 18:22:46  osm2pgsql took 233s (3m 53s) overall.
-    ```
 ### Installing pg_tileserv
 Next we need a way to serve Mapbox Vector Tiles ([MVT](https://gdal.org/en/stable/drivers/vector/mvt.html)) from our PostGIS database to our map renderer. We can do this with [pg_tileserv](https://access.crunchydata.com/documentation/pg_tileserv/1.0.11/) which is a single standalone binary that acts as the intermediary between our raw OSM data and the rendering layer.
 1. Stand up the podman container and have it connect to the PostGIS server.
@@ -110,7 +69,7 @@ cd wiki-map && npm install vite --save
 #### Wikipedia API
 1. A testing sandbox for the Wikipedia API is available at https://en.wikipedia.org/wiki/Special:ApiSandbox
 
-## Production deployment
+### Production deployment
 1. Create project directory on server
     ```
     ssh -p 3020 dmmettlach@137.184.39.108 'mkdir -p ~/wikimap/wikimap'
@@ -162,3 +121,19 @@ cd wiki-map && npm install vite --save
     INSERT="TRUNCATE TABLE enwiki_page_geo; INSERT INTO enwiki_page_geo ( page_id, page_namespace, page_title, page_len, gt_id, gt_lat, gt_lon, gt_geo, gt_dim, gt_type, gt_name, gt_country, gt_region, gt_lat_int, gt_lon_int, page_len_ntile ) SELECT page_id, page_namespace, DECODE(page_title, 'hex') AS page_title, page_len, gt_id, gt_lat, gt_lon, ST_SetSRID(ST_MakePoint(gt_lon, gt_lat), 4326) AS gt_geo, gt_dim, DECODE(gt_type, 'hex') AS gt_type, DECODE(gt_name, 'hex') AS gt_name, DECODE(gt_country, 'hex') AS gt_country, DECODE(gt_region, 'hex') AS gt_region, gt_lat_int, gt_lon_int, page_len_ntile FROM enwiki_page_geo_staging;"
     docker exec -it wikimap-postgis-1 psql -h localhost -U postgres postgis -c "$INSERT"
     ```
+
+## PMTile Tutorial
+
+In contrast to MVT tiles, PMTile is an archive file format. Instead of using a tile server to serve `{z}/{x}/{y}` requests, clients can use http range queries to request data out of the static PMTile file. That means a PostGIS and tile server is not required once the PMTile archive is generated. It uses deduplication to reduce the number of tiles it stores internally to dramatically reduce the size vs generating tiles for every z/x/y combination separately.
+
+### Generating the PMTile archive
+
+The general strategy is to convert `PostGIS -> GeoJSON -> PMTile`.
+
+1. Use ogr2ogr to convert the geo data in PostGIS into GeoJSON. Then convert the GeoJSON to PMTile.
+    ```
+    cd enwiki
+    ./enwiki_postgis_to_geojson.sh # Creates enwiki_page_geo.jsonl
+    ./enwiki_geojson_to_pmtile.sh # Creates enwiki_page_geo.pmtiles
+    ```
+
