@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fetchWikiPreview } from './wikipediaApi.js';
+//import { fetchWikiPreview } from '../src/wikipediaApi.js';
 
 function makeFeature(pageId: number) {
   return {
@@ -91,6 +91,10 @@ vi.mock('ol/Map.js', () => {
   return { default: MockMap };
 });
 
+vi.stubGlobal('fetch', () => {
+  return Promise.resolve(null);
+});
+
 describe('main.ts tooltip behavior', () => {
   beforeEach(() => {
     // Fresh DOM container for each module import.
@@ -99,28 +103,11 @@ describe('main.ts tooltip behavior', () => {
     // Reset mock singletons.
     if (MapMock?.instances) MapMock.instances.length = 0;
     if (OverlayMock?.instances) OverlayMock.instances.length = 0;
-
-    vi.unstubAllGlobals();
   });
 
   it('only one tooltip can be open at a time (single overlay reused)', async () => {
-    vi.mock("./wikipediaApi.js", async (importOriginal) => {
-      const originalModule = await importOriginal();
-
-      const jsonByPageId = new Map<number, Promise<any>>();
-      jsonByPageId.set(1, Promise.resolve(null));
-      jsonByPageId.set(2, Promise.resolve(null));
-
-      return {
-        WikiPreview: importOriginal(),
-        fetchWikiPreview(pageId: number) {
-          return jsonByPageId.get(pageId);
-        }
-      }
-    });
-
     await vi.resetModules();
-    await import('./main.js');
+    await import('../src/main.js');
 
     expect(OverlayMock.instances).toHaveLength(1);
     const overlay = OverlayMock.instances[0];
@@ -154,17 +141,18 @@ describe('main.ts tooltip behavior', () => {
     jsonByPageId.set(1, d1.promise);
     jsonByPageId.set(2, d2.promise);
 
-    vi.doMock("./wikipediaApi.js", async (importOriginal) => {
+    vi.doMock("../src/wikipediaApi.js", async (importOriginal) => {
       return {
         WikiPreview: importOriginal(),
         fetchWikiPreview(pageId: number) {
-          return jsonByPageId.get(pageId);
+          let promise = jsonByPageId.get(pageId);
+          return promise;
         }
       }
     });
 
     await vi.resetModules();
-    await import('./main.js');
+    await import('../src/main.js');
 
     const overlay = OverlayMock.instances[0];
     const tooltipEl = overlay.element as HTMLDivElement;
@@ -190,26 +178,8 @@ describe('main.ts tooltip behavior', () => {
   });
 
   it('clicking a non-feature closes the tooltip and cancels pending loads', async () => {
-    const jsonByPageId = new Map<number, Promise<any>>();
-    const d1 = Promise.resolve({
-      title: 'A',
-      description: 'First',
-      thumbnailUrl: 'https://example.com/a.jpg'
-    });
-
-    jsonByPageId.set(1, d1);
-
-    vi.doMock("./wikipediaApi.js", async (importOriginal) => {
-      return {
-        WikiPreview: importOriginal(),
-        fetchWikiPreview(pageId: number) {
-          return jsonByPageId.get(pageId);
-        }
-      }
-    });
-
     await vi.resetModules();
-    await import('./main.js');
+    await import('../src/main.js');
 
     const overlay = OverlayMock.instances[0];
     const tooltipEl = overlay.element as HTMLDivElement;

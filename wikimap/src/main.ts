@@ -1,5 +1,5 @@
-import './style.css'
-import pmtilesUrl from './enwiki_page_geo.pmtiles'
+import '/style.css'
+import pmtilesUrl from '/data/enwiki_page_geo.pmtiles'
 import { WikiPreview, fetchWikiPreview } from './wikipediaApi.js'
 
 import OSM from 'ol/source/OSM.js'
@@ -132,7 +132,6 @@ async function onFeatureClicked(feature: FeatureLike | null | undefined, coordin
   }
 
   setSelectedFeature(pageId);
-
   openTooltipAt(
     coordinate,
     `<div class="wiki-tooltip__title">Loading...</div>`,
