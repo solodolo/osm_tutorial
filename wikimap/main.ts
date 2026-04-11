@@ -1,5 +1,5 @@
 import './style.css'
-import pmtilesUrl from './enwiki_page_geo.pmtiles?url'
+import pmtilesUrl from './enwiki_page_geo.pmtiles'
 import { WikiPreview, fetchWikiPreview } from './wikipediaApi.js'
 
 import OSM from 'ol/source/OSM.js'
