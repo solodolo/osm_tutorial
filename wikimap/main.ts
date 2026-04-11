@@ -1,17 +1,19 @@
 import './style.css'
-import pmtilesUrl from './enwiki_page_geo.pmtiles'
+import pmtilesUrl from './enwiki_page_geo.pmtiles?url'
+import { WikiPreview, fetchWikiPreview } from './wikipediaApi.js'
+
 import OSM from 'ol/source/OSM.js'
 import OLMap from 'ol/Map.js';
 import Overlay from 'ol/Overlay.js';
 import View from 'ol/View.js';
 import TileLayer from 'ol/layer/Tile.js';
-import VectorTile from 'ol/layer/VectorTile';
+import VectorTile from 'ol/layer/VectorTile.js';
 import { PMTilesVectorSource } from 'ol-pmtiles';
-import { Fill, Stroke, Style } from 'ol/style';
-import CircleStyle from 'ol/style/Circle';
-import { FeatureLike } from 'ol/Feature';
+import { Fill, Stroke, Style } from 'ol/style.js';
+import CircleStyle from 'ol/style/Circle.js';
+import { FeatureLike } from 'ol/Feature.js';
 import { MapBrowserEvent } from 'ol';
-import { Coordinate } from 'ol/coordinate';
+import { Coordinate } from 'ol/coordinate.js';
 
 const map: OLMap = new OLMap({
   view: new View({
@@ -60,12 +62,6 @@ const wikiDataLayer = new VectorTile({
 map.addLayer(baseLayer);
 map.addLayer(wikiDataLayer);
 
-type WikiPreview = {
-  title: string;
-  description: string;
-  thumbnailUrl?: string;
-};
-
 const tooltipEl: HTMLDivElement = document.createElement('div');
 tooltipEl.className = 'wiki-tooltip';
 tooltipEl.style.display = 'none';
@@ -77,8 +73,6 @@ const tooltipOverlay: Overlay = new Overlay({
   stopEvent: true,
 });
 map.addOverlay(tooltipOverlay);
-
-const wikiPreviewCache: Map<number, Promise<WikiPreview | null>> = new Map();
 
 function renderTooltip(preview: WikiPreview, pageId: number) {
   const link = `https://en.wikipedia.org/w/index.php?curid=${pageId}`;
@@ -102,46 +96,6 @@ function openTooltipAt(coordinate: number[], html: string) {
   tooltipOverlay.setPosition(coordinate);
   tooltipEl.style.display = 'block';
   tooltipEl.innerHTML = html;
-}
-
-async function fetchWikiPreview(pageId: number): Promise<WikiPreview | null> {
-  const cached = wikiPreviewCache.get(pageId);
-  if (cached) return cached;
-
-  const preview: Promise<WikiPreview | null> = (async () => {
-    const url = new URL('https://en.wikipedia.org/w/api.php');
-    url.search = new URLSearchParams({
-      action: 'query',
-      format: 'json',
-      formatversion: '2',
-      origin: '*',
-      pageids: String(pageId),
-      redirects: '1',
-      prop: 'description|pageimages',
-      piprop: 'thumbnail',
-      pithumbsize: '240',
-    }).toString();
-
-    const resp = await fetch(url.toString());
-    if (!resp.ok) throw new Error(`Wikipedia API error: ${resp.status}`);
-    const data = await resp.json();
-    const page = data?.query?.pages?.[0];
-    if (!page || page.missing) return null;
-
-    const title: string | undefined = page.title;
-    if (!title) return null;
-
-    const description: string = page.description || "";
-
-    const thumbnailUrl: string | undefined = page.thumbnail?.source;
-    return { title, description, thumbnailUrl };
-  })().catch((err) => {
-    wikiPreviewCache.delete(pageId);
-    throw err;
-  });
-
-  wikiPreviewCache.set(pageId, preview);
-  return preview;
 }
 
 function resetSelectedFeatures() {

@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "lib": "ES6",
+    "moduleResolution": "nodenext",
+    "target": "ES6",
+    "types": ["vite/client"]
+  },
+  "include": ["*.ts"]
+}
