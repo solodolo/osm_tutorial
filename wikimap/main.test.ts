@@ -1,6 +1,7 @@
 /** @vitest-environment jsdom */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fetchWikiPreview } from './wikipediaApi.js';
 
 function makeFeature(pageId: number) {
   return {
@@ -17,6 +18,19 @@ function deferred<T>() {
 
 let MapMock: any;
 let OverlayMock: any;
+
+vi.mock('ol-pmtiles', () => ({
+  PMTilesVectorSource: class {
+    constructor() { }
+  },
+}));
+
+vi.mock('ol/layer/VectorTile.js', () => ({
+  default: class {
+    constructor() { }
+    changed() { }
+  },
+}));
 
 vi.mock('ol/Overlay.js', () => {
   class MockOverlay {
@@ -90,26 +104,23 @@ describe('main.ts tooltip behavior', () => {
   });
 
   it('only one tooltip can be open at a time (single overlay reused)', async () => {
-    const jsonByPageId = new Map<number, Promise<any>>();
-    jsonByPageId.set(1, Promise.resolve(null));
-    jsonByPageId.set(2, Promise.resolve(null));
+    vi.mock("./wikipediaApi.js", async (importOriginal) => {
+      const originalModule = await importOriginal();
 
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (urlStr: string) => {
-        const pageId = Number(new URL(urlStr).searchParams.get('pageids'));
-        const d = jsonByPageId.get(pageId);
-        if (!d) throw new Error(`Unexpected pageId ${pageId}`);
-        return {
-          ok: true,
-          status: 200,
-          json: async () => d,
-        } as any;
-      }),
-    );
+      const jsonByPageId = new Map<number, Promise<any>>();
+      jsonByPageId.set(1, Promise.resolve(null));
+      jsonByPageId.set(2, Promise.resolve(null));
+
+      return {
+        WikiPreview: importOriginal(),
+        fetchWikiPreview(pageId: number) {
+          return jsonByPageId.get(pageId);
+        }
+      }
+    });
 
     await vi.resetModules();
-    await import('./main.ts');
+    await import('./main.js');
 
     expect(OverlayMock.instances).toHaveLength(1);
     const overlay = OverlayMock.instances[0];
@@ -137,28 +148,23 @@ describe('main.ts tooltip behavior', () => {
     const jsonByPageId = new Map<number, Promise<any>>();
     const d1 = deferred();
     const d2 = deferred();
-    const preview1 = { query: { pages: [{ title: 'A', description: 'First', thumbnail: { source: 'https://example.com/a.jpg' } }] } };
-    const preview2 = { query: { pages: [{ title: 'B', description: 'Second', thumbnail: { source: 'https://example.com/b.jpg' } }] } };
+    const preview1 = { title: 'A', description: 'First', thumbnailUrl: 'https://example.com/a.jpg' };
+    const preview2 = { title: 'B', description: 'Second', thumbnailUrl: 'https://example.com/b.jpg' };
 
     jsonByPageId.set(1, d1.promise);
     jsonByPageId.set(2, d2.promise);
 
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (urlStr: string) => {
-        const pageId = Number(new URL(urlStr).searchParams.get('pageids'));
-        const d = jsonByPageId.get(pageId);
-        if (!d) throw new Error(`Unexpected pageId ${pageId}`);
-        return {
-          ok: true,
-          status: 200,
-          json: async () => d,
-        } as any;
-      }),
-    );
+    vi.doMock("./wikipediaApi.js", async (importOriginal) => {
+      return {
+        WikiPreview: importOriginal(),
+        fetchWikiPreview(pageId: number) {
+          return jsonByPageId.get(pageId);
+        }
+      }
+    });
 
     await vi.resetModules();
-    await import('./main.ts');
+    await import('./main.js');
 
     const overlay = OverlayMock.instances[0];
     const tooltipEl = overlay.element as HTMLDivElement;
@@ -186,35 +192,24 @@ describe('main.ts tooltip behavior', () => {
   it('clicking a non-feature closes the tooltip and cancels pending loads', async () => {
     const jsonByPageId = new Map<number, Promise<any>>();
     const d1 = Promise.resolve({
-      query: {
-        pages: [
-          {
-            title: 'A',
-            description: 'First',
-            thumbnail: { source: 'https://example.com/a.jpg' },
-          },
-        ],
-      },
+      title: 'A',
+      description: 'First',
+      thumbnailUrl: 'https://example.com/a.jpg'
     });
 
     jsonByPageId.set(1, d1);
 
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (urlStr: string) => {
-        const pageId = Number(new URL(urlStr).searchParams.get('pageids'));
-        const d = jsonByPageId.get(pageId);
-        if (!d) throw new Error(`Unexpected pageId ${pageId}`);
-        return {
-          ok: true,
-          status: 200,
-          json: async () => d,
-        } as any;
-      }),
-    );
+    vi.doMock("./wikipediaApi.js", async (importOriginal) => {
+      return {
+        WikiPreview: importOriginal(),
+        fetchWikiPreview(pageId: number) {
+          return jsonByPageId.get(pageId);
+        }
+      }
+    });
 
     await vi.resetModules();
-    await import('./main.ts');
+    await import('./main.js');
 
     const overlay = OverlayMock.instances[0];
     const tooltipEl = overlay.element as HTMLDivElement;
