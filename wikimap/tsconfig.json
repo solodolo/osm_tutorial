@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "lib": "ES6",
+    "module": "nodenext",
     "moduleResolution": "nodenext",
     "target": "ES6",
     "types": ["vite/client"]
