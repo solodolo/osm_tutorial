@@ -2,6 +2,11 @@
 
 This is a fun experiment to build a map of wikipedia pages that have a geography component and display them efficiently. I documented a few different approaches that were abandoned for one reason or another. The final version works well though and runs on a $6 VPS.
 
+## Demo
+[demo.webm](https://github.com/user-attachments/assets/1a3cfc22-c599-4073-ad85-ac21d98797e2)
+
+
+
 ## Helpful tutorials
 
 * https://blog.rustprooflabs.com/2019/01/postgis-osm-load was used as a starting point and tweaked for current versions of all the tools.
