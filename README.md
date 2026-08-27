@@ -1,6 +1,9 @@
 # Overview
 
-This is a tutorial for building a map of Tanzania using OSM data. Several other tutorials were followed to pieces this together:
+This is a fun experiment to build a map of wikipedia pages that have a geography component and display them efficiently. I documented a few different approaches that were abandoned for one reason or another. The final version works well though and runs on a $6 VPS.
+
+## Helpful tutorials
+
 * https://blog.rustprooflabs.com/2019/01/postgis-osm-load was used as a starting point and tweaked for current versions of all the tools.
 * https://github.com/bmgru/osmhike-tileserver/blob/master/tutorial.pdf as a general reference.
 * https://github.com/openstreetmap-carto/openstreetmap-carto was used as the default style for importing and rendering data
@@ -72,29 +75,29 @@ cd wiki-map && npm install vite --save
 ### Production deployment
 1. Create project directory on server
     ```
-    ssh -p 3020 dmmettlach@137.184.39.108 'mkdir -p ~/wikimap/wikimap'
-    ssh -p 3020 dmmettlach@137.184.39.108 'mkdir -p ~/www_data/wikimap'
+    ssh -p 3020 dmmettlach@wikimap_vps 'mkdir -p ~/wikimap/wikimap'
+    ssh -p 3020 dmmettlach@wikimap_vps 'mkdir -p ~/www_data/wikimap'
     ```
 1. Copy the project files to the server
     ```
     # Docker compose
-    scp -P 3020 docker-compose.yml dmmettlach@137.184.39.108:~/wikimap/
+    scp -P 3020 docker-compose.yml dmmettlach@wikimap_vps:~/wikimap/
     # pg_tileserv config
-    scp -P 3020 wikimap/pg_tileserv.toml dmmettlach@137.184.39.108:~/wikimap/wikimap/
+    scp -P 3020 wikimap/pg_tileserv.toml dmmettlach@wikimap_vps:~/wikimap/wikimap/
     # Database scripts
-    rsync -e "ssh -p 3020" --exclude data -av enwiki dmmettlach@137.184.39.108:~/wikimap/
+    rsync -e "ssh -p 3020" --exclude data -av enwiki dmmettlach@wikimap_vps:~/wikimap/
     ```
 1. Build the web app and copy to server
     ```
     npm run build
-    rsync -e "ssh -p 3020" -av dist dmmettlach@137.184.39.108:~/www_data/wikimap
+    rsync -e "ssh -p 3020" -av dist --delete dmmettlach@wikimap_vps:~/www_data/wikimap
     ```
 1. Dump the data and copy to server
     ```
     cd enwiki
     ./dump_data.sh data/page_geo.csv
-    ssh -p 3020 dmmettlach@137.184.39.108 'mkdir -p ~/wikimap/enwiki/data'
-    scp -P 3020 data/page_geo.csv dmmettlach@137.184.39.108:~/wikimap/enwiki/data/
+    ssh -p 3020 dmmettlach@wikimap_vps 'mkdir -p ~/wikimap/enwiki/data'
+    scp -P 3020 data/page_geo.csv dmmettlach@wikimap_vps:~/wikimap/enwiki/data/
     ```
 1. Set up `.env` file. See `.env.example` for required variables.
     ```
@@ -103,7 +106,7 @@ cd wiki-map && npm install vite --save
     ```
 1. Start the containers
     ```
-    ssh -p 3020 dmmettlach@137.184.39.108
+    ssh -p 3020 dmmettlach@wikimap_vps
     cd wikidata
     docker-compose up -d
     ```
